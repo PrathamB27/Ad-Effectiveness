@@ -1,5 +1,23 @@
+---
+title: "Ad Effectiveness"
+author: "PrathamB"
+date: "2023-05-21"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+
+```{r}
 install.packages("rmarkdown")
-knitr: install.packages("knitr")
+```
 
 # We have two datasets – variety_train.RData and variety_test.RData for training and testing, respectively.
 # The columns in both datasets are defined below:
@@ -15,7 +33,7 @@ knitr: install.packages("knitr")
 # 7. **variety** – number of distinct ads shown earlier in the session.
 # 8. **rep** – number of times the ad is replaced with the same ad earlier within this session. 
 # 9. **adimpsession** – number of times client's ad has been shown earlier in the session.. 
-
+```{r}
 install.packages("usethis")
 
 load("variety_test.RData")
@@ -158,4 +176,6 @@ F_NC = mean(variety_test$behavioral.full.pred[variety_test$click==0])
 F_C = mean(variety_test$behavioral.full.pred[variety_test$click==1])
 
 
+
+```
 
