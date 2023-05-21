@@ -15,6 +15,7 @@ knitr: install.packages("knitr")
 # 7. **variety** – number of distinct ads shown earlier in the session.
 # 8. **rep** – number of times the ad is replaced with the same ad earlier within this session. 
 # 9. **adimpsession** – number of times client's ad has been shown earlier in the session. 
+
 install.packages("usethis")
 
 load("variety_test.RData")
