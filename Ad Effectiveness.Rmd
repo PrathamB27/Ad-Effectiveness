@@ -38,11 +38,13 @@ install.packages("usethis")
 
 load("variety_test.RData")
 load("variety_train.RData")
-
+```
 # **EDA**
 
 #*getting summary of the training data*
+```{r}
 summary(variety_train)
+```
 
 # The observed CTR of the user is 0.1134 whereas the average ctruser is 0.1164. 
 # The observed CTR and the ctruser is almost the same with very minor difference. 
@@ -51,9 +53,10 @@ summary(variety_train)
 # who tend to spend more time on apps and are more willing to engage with an ad.
 
 # *understanding how the test and train data is distributed*
+```{r}
 hist(variety_train$variety, xlim=c(0,7), ylim=c(0,30000))
 hist(variety_train$varietytotal, xlim=c(5,70), ylim=c(0,20000))
-
+```
 # From the first histogram we see that there is a little bit of variation in the number of distinct ads shown 
 # in a particualr session, but mostly a user would see 3-4 distinct ads within a session. The data is a little 
 # left skewed. 
@@ -61,9 +64,9 @@ hist(variety_train$varietytotal, xlim=c(5,70), ylim=c(0,20000))
 # sessions ranges from 15 to 30 and the data is right skewed.
 
 #*understanding if any correlation exists between in-session variables  ~ variety and rep*
-
+```{r}
 Cor <- cor.test(formula = ~ variety_train$variety + variety_train$rep)
-
+```
 # The coefficient of correlation is pretty high, and the sign is negative (-0.70). Additionally p-value < 2.2e-16
 # This means there is a significant -ve correlation between **variety** – number of distinct ads shown earlier in the session.
 # and **rep** – number of times the ad is replaced with the same ad earlier within this session
@@ -75,17 +78,17 @@ Cor <- cor.test(formula = ~ variety_train$variety + variety_train$rep)
 
 # to check if customer is more or less likely to click if you have seen a higher variety
 # of ads previously?
-
+```{r}
 install.packages("gplots", repos="https://cran.rstudio.com")
 library(gplots)
 plotmeans(variety_train$click ~ variety_train$variety)
-
+```
 #The difference between 6TH AD shown and 7 add showns is not significant, and therefore we cannot 
 # tell if the effect of variety and click stays positive at 7 ads are shown.
 
 # **CART Analysis**
 # What previous session behaviors affect the click probability. Predicting the behavior.( contextual)
-
+```{r}
 install.packages("rpart" , repos="https://cran.rstudio.com")
 library(rpart)
 behavioral.context <- click ~ variety + rep + adimpsession
@@ -93,7 +96,7 @@ behavioral.tree = rpart(formula= behavioral.context, data= variety_train, contro
 install.packages("rpart.plot")
 library(rpart.plot)
 rpart.plot(behavioral.tree)
-
+```
 # The tree has 5 leaves. This tree tells us that the average probability of click for all 
 # data is 0.11 Variety looks like the single most important variable that matters. Repeat 
 # and AdImp are the omitted variables. Looks like users are more likely to click when they see a 
@@ -102,54 +105,56 @@ rpart.plot(behavioral.tree)
 # Going down the same branch we see the left leaf which suggests, 32% of impression have a 0.12
 # probability of being clicked on the ad and see less than 5 distinct ads in session
 
-
+```{r}
 behavioral.prediction = predict(behavioral.tree, variety_test)
 variety_test$behavioral.pred = behavioral.prediction
 head(variety_test)
-
+```
 
 # predicting based on behavior before the session ( behavioral)
-
+```{r}
 behavioral.prior <- click ~ imptotal + adimptotal + varietytotal + ctruser
 behavioral.prior.tree = rpart(formula= behavioral.prior, data= variety_train, control=rpart.control(cp=0.00032))
-
+```
+```{r}
 library(rpart.plot)
 rpart.plot(behavioral.prior.tree)
-
+```
 # This tree has seven leaves. It looks like CTR is the main variable in this tree and 
 # rest of the variables are omitted. This kind of makes sense, because if in the past session
 # a user has higher probability of clicking on an ad then ctruser can help predict what the 
 # user might do in other session based on his behavior data. This can be even seen in the tree. 
 # If ctruser is higher than 0.45 then an impression has 64% probability of receiving a click. 
 # If CTR < 0.45 7 % of impressions still have a 0.22 probabaility of getting clicked. 
-
+```{r}
 behavioral.prior.prediction = predict(behavioral.prior.tree, variety_test)
 variety_test$behavioral.prior.pred = behavioral.prior.prediction
 head(variety_test)
-
+```
 #Full tree ( contexual + behavioral)
-
+```{r}
 behavioral.full <- click ~ variety + rep + adimpsession + imptotal + adimptotal + varietytotal + ctruser + timeofday
 
 behavioral.full.tree = rpart(formula= behavioral.full, data= variety_train, control=rpart.control(cp=0.00032))
 
 rpart.plot(behavioral.full.tree)
-
+```
 # There are 17 leaves in the tree above. The variables that matter are ctuser, 
 # variety and adimpsession. The omitted variables are rep, varietytotal, timeofday, 
 # adimptotal, imptotal. The tree is unbalanced. if the ctruser is greater than 0.14 
 # then there is 17% chance that 35% of the impression will receive clicks. When adimpsession 
 # is greater than or equal to 2.5 there is 14% chance that 10% of the impresssion will be 
 # clicked.
-
+```{r}
 behavioral.full.prediction = predict(behavioral.full.tree, variety_test)
 variety_test$behavioral.full.pred = behavioral.full.prediction
 
 head(variety_test)
-
+```
 # model comparision
 
 #Baseline CTR
+```{r}
 base_mean = mean(variety_test$click)
 
 # mean of behavioral data with no click in session
@@ -174,8 +179,19 @@ F_NC = mean(variety_test$behavioral.full.pred[variety_test$click==0])
 # mean of behavioral data with click in for full tree session 
 
 F_C = mean(variety_test$behavioral.full.pred[variety_test$click==1])
-
-
-
 ```
 
+```{r}
+Baseline <- c(base_mean,base_mean)
+In_Session <- c(beh_C,beh_NC)
+Prior_Session <- c(Prior_C, Prior_NC)
+Full_Session <- c(F_C, F_NC)
+df<- data.frame(Baseline,In_Session, Prior_Session,Full_Session)
+rownames(df)<- c("with click", "no click")
+df
+```
+
+```{r}
+library(knitr)
+knitr::kable(df, "pipe")
+```
